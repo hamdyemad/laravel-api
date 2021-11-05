@@ -22,7 +22,7 @@ class AuthController extends Controller
             'password' => ['required', 'confirmed']
         ]);
         if($validator->fails()) {
-            return $this->sendRes('error', false, $validator->errors());
+            return $this->sendRes($validator->errors(), false, []);
         } else {
             $user = User::create([
                 'name' => $request->name,
@@ -45,7 +45,7 @@ class AuthController extends Controller
         ]);
 
         if($validator->fails()) {
-            return $this->sendRes('error', false, $validator->errors());
+            return $this->sendRes($validator->errors(), false, []);
         } else {
             $user = User::where('email', $request->email)->first();
             if($user) {
@@ -53,11 +53,10 @@ class AuthController extends Controller
                     if (! $token = auth()->login($user)) {
                         return response()->json(['error' => 'Unauthorized'], 401);
                     }
-                    return $this->respondWithToken($token);
+                    return $this->respondWithToken($token, true, $user->name . ' logged in success', $user);
 
                 } else {
                     return $this->sendRes('there is something error with this email or password', false, []);
-
                 }
             }
         }
