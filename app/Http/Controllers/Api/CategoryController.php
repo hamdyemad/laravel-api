@@ -30,7 +30,7 @@ class CategoryController extends Controller
         if(request('name')) {
             $categories = Category::where('name', 'like',request('name') . '%')->latest()->paginate($default);
         }
-        if(request('status') == 0 || request('status') == 1) {
+        if(request('status')) {
             $categories = Category::where('status', '=', request('status'))->latest()->paginate($default);
         }
         if(request('name') && request('status')) {
@@ -51,7 +51,7 @@ class CategoryController extends Controller
     {
         $validator = Validator::make($request->all(),[
             'name' => 'required|unique:categories,name',
-            'image' => 'required|file'
+            'image' => 'required|file|image'
         ]);
         if($validator->fails()) {
             return $this->sendRes($validator->errors(), false);
@@ -71,9 +71,14 @@ class CategoryController extends Controller
      * @param  \App\Models\Category  $category
      * @return \Illuminate\Http\Response
      */
-    public function show(Category $category)
+    public function show($id)
     {
-        return $this->sendRes('',true, $category);
+        $category = Category::find($id);
+        if($category) {
+            return $this->sendRes('',true, $category);
+        } else {
+            return $this->sendRes('there is some thing error !',false);
+        }
     }
 
     /**
@@ -82,40 +87,33 @@ class CategoryController extends Controller
      * @param  \App\Models\Category  $category
      * @return \Illuminate\Http\Response
      */
-    public function edit(Category $category, Request $request)
+    public function edit($id, Request $request)
     {
-        $validator = Validator::make($request->all(),[
-            'name' => ['required', Rule::unique('categories', 'name')->ignore($category->id)],
-            'image' => 'file'
-        ]);
-        if($validator->fails()) {
-            return $this->sendRes($validator->errors(), false);
-        } else {
-            $updatedArr = [
-                'name' => $request->name,
-                'showing_number' => $request->showing_number
-            ];
-            if($request->has('image')) {
-                if(file_exists(public_path($category->image))) {
-                    unlink($category->image);
+        $category = Category::find($id);
+        if($category) {
+            $validator = Validator::make($request->all(),[
+                'name' => ['required', Rule::unique('categories', 'name')->ignore($category->id)],
+                'image' => 'file|image'
+            ]);
+            if($validator->fails()) {
+                return $this->sendRes($validator->errors(), false);
+            } else {
+                $updatedArr = [
+                    'name' => $request->name,
+                    'showing_number' => $request->showing_number
+                ];
+                if($request->has('image')) {
+                    if(file_exists(public_path($category->image))) {
+                        unlink($category->image);
+                    }
+                    $updatedArr['image'] = $this->uploadFile($request, $this->categoriesPath, 'image');
                 }
-                $updatedArr['image'] = $this->uploadFile($request, $this->categoriesPath, 'image');
+                $category->update($updatedArr);
+                return $this->sendRes('category updated successfully!');
             }
-            $category->update($updatedArr);
-            return $this->sendRes('category updated successfully!');
+        } else {
+            return $this->sendRes('there is some thing error !',false);
         }
-    }
-
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \App\Models\Category  $category
-     * @return \Illuminate\Http\Response
-     */
-    public function update(Request $request, Category $category)
-    {
-        //
     }
 
     /**
@@ -124,12 +122,17 @@ class CategoryController extends Controller
      * @param  \App\Models\Category  $category
      * @return \Illuminate\Http\Response
      */
-    public function destroy(Category $category)
+    public function destroy($id)
     {
-        if(file_exists($category->image)) {
-            unlink($category->image);
+        $category = Category::find($id);
+        if($category) {
+            if(file_exists($category->image)) {
+                unlink($category->image);
+            }
+            Category::destroy($category->id);
+            return $this->sendRes($category->name . ' deleted successfully!');
+        } else {
+            return $this->sendRes('there is some thing error !',false);
         }
-        Category::destroy($category->id);
-        return $this->sendRes($category->name . ' deleted successfully!');
     }
 }

@@ -25,9 +25,9 @@ Route::group(['prefix' => 'admin'], function() {
         Route::group(['prefix' => 'categories'], function() {
             Route::get('/', 'Api\CategoryController@index');
             Route::post('/', 'Api\CategoryController@store');
-            Route::get('/{category}', 'Api\CategoryController@show');
-            Route::post('/{category}', 'Api\CategoryController@edit');
-            Route::delete('/{category}', 'Api\CategoryController@destroy');
+            Route::get('/{id}', 'Api\CategoryController@show');
+            Route::patch('/{id}', 'Api\CategoryController@edit');
+            Route::delete('/{id}', 'Api\CategoryController@destroy');
         });
     // End Categories
 
